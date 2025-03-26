@@ -23,15 +23,12 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
         
-    - name: Deploy to EC2
-      run: |
-        rsync -avz --delete \
-          --exclude '.git/' \
-          --exclude '.github/' \
-          --exclude '.gitignore' \
-          ./ ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:${{ secrets.DEPLOY_PATH }}
+    - name: Create deploy directory
+      run: ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "mkdir -p ${{ secrets.DEPLOY_PATH }}"
+      
+    - name: Deploy to EC2 (single line command)
+      run: rsync -avz --delete --exclude '.git/' --exclude '.github/' --exclude '.gitignore' ./ ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:${{ secrets.DEPLOY_PATH }}
         
     - name: Set correct permissions
-      run: |
-        ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} \
-        "chmod -R 755 ${{ secrets.DEPLOY_PATH }}"
+      if: success()
+      run: ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "chmod -R 755 ${{ secrets.DEPLOY_PATH }}"
