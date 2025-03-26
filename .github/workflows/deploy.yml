@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy to EC2 with Environment File
 
 on:
   push:
@@ -12,22 +12,28 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
       
+    - name: Create environment file
+      run: |
+        echo "EC2_HOST=${{ secrets.EC2_HOST }}" >> $GITHUB_ENV
+        echo "EC2_USERNAME=${{ secrets.EC2_USERNAME }}" >> $GITHUB_ENV
+        echo "DEPLOY_PATH=${{ secrets.DEPLOY_PATH }}" >> $GITHUB_ENV
+      
     - name: Deploy to EC2
       uses: appleboy/scp-action@v0.1.4
       with:
-        host: 43.205.23.225
-        username: ubuntu
+        host: ${{ env.EC2_HOST }}
+        username: ${{ env.EC2_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         source: "."
-        target: "/var/www/html/login-app"
+        target: "${{ env.DEPLOY_PATH }}"
         strip_components: 0
         
     - name: Configure permissions
       uses: appleboy/ssh-action@v0.1.10
       with:
-        host: 43.205.23.225
-        username: ubuntu
+        host: ${{ env.EC2_HOST }}
+        username: ${{ env.EC2_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          chmod -R 755 /var/www/html/login-app
+          chmod -R 755 ${{ env.DEPLOY_PATH }}
           echo "Deployment completed successfully"
